@@ -12,11 +12,6 @@ const logger = require('../build/lib/logger')
 const project = require('../project.config')
 Object.assign(global, project.globals)
 
-
-const AppContainer = require('../src/containers/AppContainer').default
-const createStore = require('../src/store/createStore').default
-const createRoutes = require('../src/routes/index').default
-
 const app = express()
 app.use(compress())
 
@@ -55,8 +50,6 @@ if (project.env === 'development') {
       if (err) {
         return next(err)
       }
-      const options = {interpolate: /{{([\s\S]+?)}}/g}
-      const template = _.template(result, options)
 
       const initialState = {
         routing: {
@@ -66,20 +59,33 @@ if (project.env === 'development') {
         }
       }
 
-      const history = ReactRouter.createMemoryHistory(initialState.routing.location.pathname)
-      const store = createStore(history, initialState)
-      const routes = createRoutes(store)
-      const component = ReactDOMServer.renderToString(
-        React.createElement(AppContainer, {store, routes, history})
-      )
+      function render(component = '') {
+        const options = {interpolate: /{{([\s\S]+?)}}/g}
+        const template = _.template(result, options)
+        res.send(
+          template({
+            initialState: JSON.stringify(initialState),
+            component
+          })
+        )
+      }
 
       res.set('content-type', 'text/html')
-      res.send(
-        template({
-          initialState: JSON.stringify(initialState),
-          component
-        })
-      )
+      if (__DEV__) {
+        render()
+      } else {
+        const AppContainer = require('../src/containers/AppContainer').default
+        const createStore = require('../src/store/createStore').default
+        const createRoutes = require('../src/routes/index').default
+
+        const history = ReactRouter.createMemoryHistory(initialState.routing.location.pathname)
+        const store = createStore(history, initialState)
+        const routes = createRoutes(store)
+        const component = ReactDOMServer.renderToString(
+          React.createElement(AppContainer, {store, routes, history})
+        )
+        render(component)
+      }
       res.end()
     })
   })

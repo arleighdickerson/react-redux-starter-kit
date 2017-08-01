@@ -8,7 +8,7 @@ module.exports = {
   /** The name of the directory containing the application source code */
   srcDir: 'src',
   /** The file name of the application's entry point */
-  main: 'main',
+  main: 'main.' + NODE_ENV + '.js',
   /** The name of the directory in which to emit compiled assets */
   outDir: 'dist',
   /** The base path for all projects assets (relative to the website root) */
