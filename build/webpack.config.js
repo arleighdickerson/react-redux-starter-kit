@@ -174,10 +174,10 @@ config.module.rules.push({
 // HTML Template
 // ------------------------------------
 config.plugins.push(new HtmlWebpackPlugin({
-  template: '!!raw-loader!' + inProjectSrc('index.html'),
+  template: inProjectSrc('index.html'),
   inject: true,
   minify: {
-    collapseWhitespace: true,
+    collapseWhitespace: false,
   },
 }))
 
@@ -205,10 +205,16 @@ if (!__TEST__) {
   config.plugins.push(new webpack.optimize.CommonsChunkPlugin({names: bundles}))
 }
 
+// Isomorphic Tools
+// ------------------------------------
+config.plugins.unshift((() => {
+  const tools = new IsomorphicTools(require('./isomorphic.config'))
+  return __DEV__ ? tools.development() : tools
+})())
+
 // Production Optimizations
 // ------------------------------------
 if (__PROD__) {
-  config.plugins.unshift(new IsomorphicTools(require('./isomorphic.config')))
   config.plugins.push(
     new webpack.LoaderOptionsPlugin({
       minimize: true,
