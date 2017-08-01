@@ -5,3 +5,7 @@ dist
 coverage
 .idea/
 .yarn-cache
+package-lock.json
+webpack-stats.json
+webpack-assets.json
+

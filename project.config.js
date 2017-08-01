@@ -18,7 +18,15 @@ module.exports = {
   /** A hash map of keys that the compiler should treat as external to the project */
   externals: {},
   /** A hash map of variables and their values to expose globally */
-  globals: {},
+  globals: {
+    'process.env': {
+      'NODE_ENV': JSON.stringify(NODE_ENV)
+    },
+    'NODE_ENV': NODE_ENV,
+    '__DEV__': NODE_ENV === 'development',
+    '__PROD__': NODE_ENV === 'production',
+    '__TEST__': NODE_ENV === 'test',
+  },
   /** Whether to enable verbose logging */
   verbose: false,
   /** The list of modules to bundle separately from the core application code */

@@ -1,16 +1,16 @@
-import { combineReducers } from 'redux'
-import locationReducer from './location'
+import {reducer as formReducer} from 'redux-form'
+import {combineReducers} from 'redux'
+import {routeReducer} from "redux-simple-router";
 
 export const makeRootReducer = (asyncReducers) => {
   return combineReducers({
-    location: locationReducer,
+    form: formReducer,
+    routing: routeReducer,
     ...asyncReducers
   })
 }
 
-export const injectReducer = (store, { key, reducer }) => {
-  if (Object.hasOwnProperty.call(store.asyncReducers, key)) return
-
+export const injectReducer = (store, {key, reducer}) => {
   store.asyncReducers[key] = reducer
   store.replaceReducer(makeRootReducer(store.asyncReducers))
 }

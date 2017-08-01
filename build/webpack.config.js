@@ -2,6 +2,7 @@ const path = require('path')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const IsomorphicTools = require('webpack-isomorphic-tools/plugin')
 const project = require('../project.config')
 
 const inProject = path.resolve.bind(path, project.basePath)
@@ -112,7 +113,7 @@ config.module.rules.push({
               browsers: ['last 2 versions'],
             },
             discardComments: {
-              removeAll : true,
+              removeAll: true,
             },
             discardUnused: false,
             mergeIdents: false,
@@ -139,10 +140,10 @@ config.plugins.push(extractStyles)
 // Images
 // ------------------------------------
 config.module.rules.push({
-  test    : /\.(png|jpg|gif)$/,
-  loader  : 'url-loader',
-  options : {
-    limit : 8192,
+  test: /\.(png|jpg|gif)$/,
+  loader: 'url-loader',
+  options: {
+    limit: 8192,
   },
 })
 
@@ -160,11 +161,11 @@ config.module.rules.push({
   const mimetype = font[1]
 
   config.module.rules.push({
-    test    : new RegExp(`\\.${extension}$`),
-    loader  : 'url-loader',
-    options : {
-      name  : 'fonts/[name].[ext]',
-      limit : 10000,
+    test: new RegExp(`\\.${extension}$`),
+    loader: 'url-loader',
+    options: {
+      name: 'fonts/[name].[ext]',
+      limit: 10000,
       mimetype,
     },
   })
@@ -173,7 +174,7 @@ config.module.rules.push({
 // HTML Template
 // ------------------------------------
 config.plugins.push(new HtmlWebpackPlugin({
-  template: inProjectSrc('index.html'),
+  template: '!!raw-loader!'+inProjectSrc('index.html'),
   inject: true,
   minify: {
     collapseWhitespace: true,
@@ -203,6 +204,13 @@ if (!__TEST__) {
   }
   config.plugins.push(new webpack.optimize.CommonsChunkPlugin({ names: bundles }))
 }
+
+// Isomorphic Tools
+// ------------------------------------
+config.plugins.unshift((() => {
+  const tools = new IsomorphicTools(require('./isomorphic.config'))
+  return __DEV__ ? tools.development() : tools
+})())
 
 // Production Optimizations
 // ------------------------------------

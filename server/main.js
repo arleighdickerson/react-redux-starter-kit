@@ -1,10 +1,21 @@
+const React = require('react')
+const ReactDOMServer = require('react-dom/server')
+const ReactRouter = require('react-router')
 const express = require('express')
 const path = require('path')
 const webpack = require('webpack')
-const logger = require('../build/lib/logger')
-const webpackConfig = require('../build/webpack.config')
-const project = require('../project.config')
 const compress = require('compression')
+const _ = require('lodash')
+
+const webpackConfig = require('../build/webpack.config')
+const logger = require('../build/lib/logger')
+const project = require('../project.config')
+Object.assign(global, project.globals)
+
+
+const AppContainer = require('../src/containers/AppContainer').default
+const createStore = require('../src/store/createStore').default
+const createRoutes = require('../src/routes/index').default
 
 const app = express()
 app.use(compress())
@@ -17,13 +28,13 @@ if (project.env === 'development') {
 
   logger.info('Enabling webpack development and HMR middleware')
   app.use(require('webpack-dev-middleware')(compiler, {
-    publicPath  : webpackConfig.output.publicPath,
-    contentBase : path.resolve(project.basePath, project.srcDir),
-    hot         : true,
-    quiet       : false,
-    noInfo      : false,
-    lazy        : false,
-    stats       : 'normal',
+    publicPath: webpackConfig.output.publicPath,
+    contentBase: path.resolve(project.basePath, project.srcDir),
+    hot: true,
+    quiet: false,
+    noInfo: false,
+    lazy: false,
+    stats: 'normal',
   }))
   app.use(require('webpack-hot-middleware')(compiler, {
     path: '/__webpack_hmr'
@@ -44,8 +55,31 @@ if (project.env === 'development') {
       if (err) {
         return next(err)
       }
+      const options = {interpolate: /{{([\s\S]+?)}}/g}
+      const template = _.template(result, options)
+
+      const initialState = {
+        routing: {
+          location: {
+            pathname: req.originalUrl
+          }
+        }
+      }
+
+      const history = ReactRouter.createMemoryHistory(initialState.routing.location.pathname)
+      const store = createStore(history, initialState)
+      const routes = createRoutes(store)
+      const component = ReactDOMServer.renderToString(
+        React.createElement(AppContainer, {store, routes, history})
+      )
+
       res.set('content-type', 'text/html')
-      res.send(result)
+      res.send(
+        template({
+          initialState: JSON.stringify(initialState),
+          component
+        })
+      )
       res.end()
     })
   })
@@ -63,5 +97,4 @@ if (project.env === 'development') {
   // server in production.
   app.use(express.static(path.resolve(project.basePath, project.outDir)))
 }
-
 module.exports = app

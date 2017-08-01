@@ -1,42 +1,46 @@
-import { applyMiddleware, compose, createStore as createReduxStore } from 'redux'
-import thunk from 'redux-thunk'
-import { browserHistory } from 'react-router'
-import makeRootReducer from './reducers'
-import { updateLocation } from './location'
+import {applyMiddleware, compose, createStore} from "redux";
+import thunk from "redux-thunk";
+import promiseMiddleware from "redux-promise-middleware";
+import makeRootReducer from "./reducers";
+import {syncHistory} from "redux-simple-router";
 
-const createStore = (initialState = {}) => {
+export default (history, initialState = {}) => {
+  const routerMiddleware = syncHistory(history)
   // ======================================================
   // Middleware Configuration
   // ======================================================
-  const middleware = [thunk]
+  const middleware = [
+    promiseMiddleware(),
+    routerMiddleware,
+    thunk,
+  ]
 
   // ======================================================
   // Store Enhancers
   // ======================================================
   const enhancers = []
-  let composeEnhancers = compose
-
   if (__DEV__) {
-    if (typeof window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ === 'function') {
-      composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+    const devToolsExtension = global.devToolsExtension
+    if (typeof devToolsExtension === 'function') {
+      enhancers.push(devToolsExtension())
     }
   }
 
   // ======================================================
   // Store Instantiation and HMR Setup
   // ======================================================
-  const store = createReduxStore(
+  const store = createStore(
     makeRootReducer(),
     initialState,
-    composeEnhancers(
+    compose(
       applyMiddleware(...middleware),
       ...enhancers
     )
   )
-  store.asyncReducers = {}
 
-  // To unsubscribe, invoke `store.unsubscribeHistory()` anytime
-  store.unsubscribeHistory = browserHistory.listen(updateLocation(store))
+  routerMiddleware.listenForReplays(store)
+
+  store.asyncReducers = {}
 
   if (module.hot) {
     module.hot.accept('./reducers', () => {
@@ -48,4 +52,3 @@ const createStore = (initialState = {}) => {
   return store
 }
 
-export default createStore
