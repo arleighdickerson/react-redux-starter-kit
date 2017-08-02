@@ -7,9 +7,15 @@ const logger = require('../lib/logger')
 
 logger.info('Starting server...')
 
-global.isomorphicTools = global.webpackIsomorphicTools = new IsomorphicTools(require('../../build/isomorphic.config'))
-  .server(config.basePath, function () {
-    require('../../server/main').listen(3000, () => {
-      logger.success('Server is running at http://localhost:3000')
-    })
+function run() {
+  require('../../server/main').listen(3000, () => {
+    logger.success('Server is running at http://localhost:3000')
   })
+}
+
+if (config.globals.__PROD__) {
+  global.isomorphicTools = global.webpackIsomorphicTools = new IsomorphicTools(require('../../build/isomorphic.config'))
+    .server(config.basePath, run)
+} else {
+  run()
+}

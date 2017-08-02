@@ -207,10 +207,9 @@ if (!__TEST__) {
 
 // Isomorphic Tools
 // ------------------------------------
-config.plugins.unshift((() => {
-  const tools = new IsomorphicTools(require('./isomorphic.config'))
-  return __DEV__ ? tools.development() : tools
-})())
+if (__PROD__) {
+  config.plugins.unshift(new IsomorphicTools(require('./isomorphic.config')))
+}
 
 // Production Optimizations
 // ------------------------------------
